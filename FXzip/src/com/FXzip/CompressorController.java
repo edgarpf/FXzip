@@ -4,7 +4,6 @@ import com.FXzip.util.Util;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.List;
 import java.util.ResourceBundle;
 import javafx.event.*;
 import javafx.fxml.*;
@@ -12,7 +11,7 @@ import javafx.scene.control.*;
 import javax.swing.JFileChooser;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.model.FileHeader;
+import net.lingala.zip4j.progress.ProgressMonitor;
 import org.apache.commons.io.FilenameUtils;
 
 public class CompressorController implements Initializable {
@@ -41,7 +40,6 @@ public class CompressorController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-
     }
 
     @FXML
@@ -84,6 +82,8 @@ public class CompressorController implements Initializable {
             return;
         }
 
+        pbar.setProgress(0);
+
         if (action.equals("Decompress")) {
             decompress();
         } else {
@@ -99,7 +99,8 @@ public class CompressorController implements Initializable {
         try {
 
             ZipFile zipFile = new ZipFile(input.getPath());
-            
+            zipFile.setRunInThread(true);
+
             if (zipFile.isEncrypted()) {
                 if (txtPass.getText().equals("")) {
                     zipFile.setPassword("1");
@@ -109,14 +110,19 @@ public class CompressorController implements Initializable {
 
             }
 
+            zipFile.extractAll(outputDirectory.getPath());
+            ProgressMonitor progressMonitor = zipFile.getProgressMonitor();
 
-            List fileHeaderList = zipFile.getFileHeaders();
+            new Thread() {
+                @Override
+                public void run() {
+                    while (progressMonitor.getState() == ProgressMonitor.STATE_BUSY) {
+                        double d = ((double) progressMonitor.getPercentDone()) / 100;
+                        pbar.setProgress(d);
+                    }
+                }
+            }.start();
 
-            for (int i = 0; i < fileHeaderList.size(); i++) {
-                FileHeader fileHeader = (FileHeader) fileHeaderList.get(i);
-                zipFile.extractFile(fileHeader, outputDirectory.getPath());
-            }
-                        
         } catch (ZipException ex) {
             Util.showErrorDialog("Error", "File Error", ex.getMessage());
         }
