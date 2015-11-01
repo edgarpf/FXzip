@@ -10,13 +10,15 @@ FXzip has only basic features. Features that satisfy a ordinary user.
 
 Zip support
 
-Progress bar.
+Criptografy with AES
+
+Progress bar
 
 Lightweight
 
 # To Do
 
-Support other formats.
+Support other formats
 
 # Images
 
